@@ -1,5 +1,6 @@
 #core/config.py
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     app_env: str = 'development'
@@ -11,8 +12,8 @@ class Settings(BaseSettings):
     ollama_base_url: str = 'http://localhost:11434'
     gemini_api_key: str = ''
     gcp_project_id: str = ''
-    class Config:
-        env_file = '.env'
+    
+    model_config = ConfigDict(env_file='.env')
  
 settings = Settings()
 

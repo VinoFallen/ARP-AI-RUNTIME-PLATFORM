@@ -1,5 +1,5 @@
 # api/v1/auth.py  (add to main.py includes)
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Depends
 from core.auth import create_access_token

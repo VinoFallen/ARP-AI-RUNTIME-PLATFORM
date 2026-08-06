@@ -5,7 +5,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from core.logging import setup_logging
-from api.v1 import agents, rag, admin
+from api.v1 import agents, rag, admin, auth
  
 setup_logging()
  
@@ -15,7 +15,8 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(CORSMiddleware, allow_origins=['*'],
                    allow_methods=['*'], allow_headers=['*'])
- 
+
+app.include_router(auth.router, prefix='/v1/auth', tags=['auth'])
 app.include_router(agents.router, prefix='/v1/agents', tags=['agents'])
 #app.include_router(rag.router,    prefix='/v1/rag',    tags=['rag'])
 #app.include_router(admin.router,  prefix='/v1/admin',  tags=['admin'])

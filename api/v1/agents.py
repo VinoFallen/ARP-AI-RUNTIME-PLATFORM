@@ -1,6 +1,6 @@
 # Agents Endpoints
 # api/v1/agents.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from core.auth import get_current_user
 from slowapi import Limiter
@@ -20,5 +20,5 @@ async def token_stream(prompt: str):
  
 @router.post('/chat')
 @limiter.limit('20/minute')
-async def chat(request, prompt: str, user=Depends(get_current_user)):
+async def chat(request: Request, prompt: str, user=Depends(get_current_user)):
     return StreamingResponse(token_stream(prompt), media_type='text/event-stream')

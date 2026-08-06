@@ -6,7 +6,6 @@ from fastapi.security import OAuth2PasswordBearer
 from .config import settings
  
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/v1/auth/token')
- 
 def create_access_token(data: dict) -> str:
     expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
     return jwt.encode({**data, 'exp': expire}, settings.secret_key, algorithm=settings.algorithm)
