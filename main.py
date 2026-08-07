@@ -1,10 +1,10 @@
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from core.logging import setup_logging
+from core.logging import setup_logging, logger
 from api.v1 import agents, rag, admin, auth
  
 setup_logging()
@@ -20,6 +20,17 @@ app.include_router(auth.router, prefix='/v1/auth', tags=['auth'])
 app.include_router(agents.router, prefix='/v1/agents', tags=['agents'])
 #app.include_router(rag.router,    prefix='/v1/rag',    tags=['rag'])
 #app.include_router(admin.router,  prefix='/v1/admin',  tags=['admin'])
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    response = await call_next(request)
+    logger.info(
+        "request_handled",
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+    )
+    return response
  
 @app.get('/health')
 async def health(): return {'status': 'ok', 'version': '1.0.0'}
