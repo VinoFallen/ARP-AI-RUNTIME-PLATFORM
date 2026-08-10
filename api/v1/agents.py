@@ -6,6 +6,7 @@ from core.auth import get_current_user
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import asyncio
+from agents.graph import agent_graph
  
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -21,4 +22,12 @@ async def token_stream(prompt: str):
 @router.post('/chat')
 @limiter.limit('20/minute')
 async def chat(request: Request, prompt: str, user=Depends(get_current_user)):
-    return StreamingResponse(token_stream(prompt), media_type='text/event-stream')
+    async def generate():
+        state = {'task': prompt, 'messages': [], 'iteration': 0,
+                 'research_output': '', 'final_output': '', 'next_agent': ''}
+        result = await agent_graph.ainvoke(state)
+        output = result.get('final_output', 'No output generated.')
+        for word in output.split():
+            yield f'data: {word} \n\n'
+        yield 'data: [DONE]\n\n'
+    return StreamingResponse(generate(), media_type='text/event-stream')
