@@ -1,4 +1,6 @@
 # tests/integration/test_module1.py
+from unittest.mock import AsyncMock
+from agents.graph import agent_graph
 
 # GET /health returns 200 with version field
 async def test_health_return_200(client):
@@ -38,15 +40,17 @@ async def test_chat_endpoint_requires_auth(client):
     assert r.status_code == 401
     
 # POST /v1/agents/chat streams tokens back with a valid token
-async def test_chat_endpoint_streams_response(client, auth_headers):
+async def _fake_invoke(state):
+    return {**state, "final_output": "stub response"}
+
+async def test_chat_endpoint_streams_response(client, auth_headers, monkeypatch):
+    monkeypatch.setattr(agent_graph, "ainvoke", AsyncMock(side_effect=_fake_invoke))
     async with client.stream(
-        "POST",
-        "/v1/agents/chat?prompt=hello",
-        headers = auth_headers
+        "POST", "/v1/agents/chat?prompt=hello", headers=auth_headers
     ) as r:
         assert r.status_code == 200
         chunks = [c async for c in r.aiter_text()]
-    body = ''.join(chunks)
+    body = "".join(chunks)
     assert "data:" in body
     assert "[DONE]" in body
     # Split on SSE event boundaries to verify multiple messages were streamed
@@ -54,12 +58,11 @@ async def test_chat_endpoint_streams_response(client, auth_headers):
     assert len(events) > 1 
     
 # Rate limiter returns 429 after 20 requests/minute
-async def test_rate_limit_triggers_after_threshold(client, auth_headers):
+async def test_rate_limit_triggers_after_threshold(client, auth_headers, monkeypatch):
+    monkeypatch.setattr(agent_graph, "ainvoke", AsyncMock(side_effect=_fake_invoke))
     statuses = []
     for _ in range(21):
-        r = await client.post(
-            "/v1/agents/chat?prompt=hi", headers=auth_headers
-        )
+        r = await client.post("/v1/agents/chat?prompt=hi", headers=auth_headers)
         statuses.append(r.status_code)
     assert 429 in statuses
 
